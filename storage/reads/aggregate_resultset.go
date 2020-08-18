@@ -14,9 +14,11 @@ import (
 type windowAggregateResultSet struct {
 	ctx          context.Context
 	req          *datatypes.ReadWindowAggregateRequest
-	cursor       SeriesCursor
+	seriesCursor SeriesCursor
 	seriesRow    *SeriesRow
 	arrayCursors *arrayCursors
+	cursor       cursors.Cursor
+	err          error
 }
 
 func NewWindowAggregateResultSet(ctx context.Context, req *datatypes.ReadWindowAggregateRequest, cursor SeriesCursor) (ResultSet, error) {
@@ -46,25 +48,31 @@ func NewWindowAggregateResultSet(ctx context.Context, req *datatypes.ReadWindowA
 	results := &windowAggregateResultSet{
 		ctx:          ctx,
 		req:          req,
-		cursor:       cursor,
+		seriesCursor: cursor,
 		arrayCursors: newArrayCursors(ctx, req.Range.Start, req.Range.End, ascending),
 	}
 	return results, nil
 }
 
 func (r *windowAggregateResultSet) Next() bool {
-	if r == nil {
+	if r == nil || r.err != nil {
 		return false
 	}
-	r.seriesRow = r.cursor.Next()
-	return r.seriesRow != nil
+
+	r.seriesRow = r.seriesCursor.Next()
+	if r.seriesRow == nil {
+		return false
+	}
+
+	r.cursor, r.err = r.createCursor(*r.seriesRow)
+	return r.err == nil
 }
 
-func (r *windowAggregateResultSet) Cursor() cursors.Cursor {
+func (r *windowAggregateResultSet) createCursor(seriesRow SeriesRow) (cursors.Cursor, error) {
 	agg := r.req.Aggregate[0]
 	every := r.req.WindowEvery
 	offset := r.req.Offset
-	cursor := r.arrayCursors.createCursor(*r.seriesRow)
+	cursor := r.arrayCursors.createCursor(seriesRow)
 
 	if every == math.MaxInt64 {
 		// This means to aggregate over whole series for the query's time range
@@ -74,9 +82,19 @@ func (r *windowAggregateResultSet) Cursor() cursors.Cursor {
 	}
 }
 
-func (r *windowAggregateResultSet) Close() {}
+func (r *windowAggregateResultSet) Cursor() cursors.Cursor {
+	return r.cursor
+}
 
-func (r *windowAggregateResultSet) Err() error { return nil }
+func (r *windowAggregateResultSet) Close() {
+	if r == nil {
+		return
+	}
+	r.seriesRow = nil
+	r.seriesCursor.Close()
+}
+
+func (r *windowAggregateResultSet) Err() error { return r.err }
 
 func (r *windowAggregateResultSet) Stats() cursors.CursorStats {
 	if r.seriesRow == nil || r.seriesRow.Query == nil {

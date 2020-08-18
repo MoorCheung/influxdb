@@ -10,10 +10,10 @@ import (
 
 type resultSet struct {
 	ctx          context.Context
-	agg          *datatypes.Aggregate
 	seriesCursor SeriesCursor
-	seriesRow    SeriesRow
+	seriesRow    *SeriesRow
 	arrayCursors *arrayCursors
+	cursor       cursors.Cursor
 }
 
 func NewFilteredResultSet(ctx context.Context, req *datatypes.ReadFilterRequest, seriesCursor SeriesCursor) ResultSet {
@@ -31,7 +31,7 @@ func (r *resultSet) Close() {
 	if r == nil {
 		return // Nothing to do.
 	}
-	r.seriesRow.Query = nil
+	r.seriesRow = nil
 	r.seriesCursor.Close()
 }
 
@@ -41,22 +41,17 @@ func (r *resultSet) Next() bool {
 		return false
 	}
 
-	seriesRow := r.seriesCursor.Next()
-	if seriesRow == nil {
+	r.seriesRow = r.seriesCursor.Next()
+	if r.seriesRow == nil {
 		return false
 	}
 
-	r.seriesRow = *seriesRow
-
+	r.cursor = r.arrayCursors.createCursor(*r.seriesRow)
 	return true
 }
 
 func (r *resultSet) Cursor() cursors.Cursor {
-	cur := r.arrayCursors.createCursor(r.seriesRow)
-	if r.agg != nil {
-		cur = newAggregateArrayCursor(r.ctx, r.agg, cur)
-	}
-	return cur
+	return r.cursor
 }
 
 func (r *resultSet) Tags() models.Tags {
