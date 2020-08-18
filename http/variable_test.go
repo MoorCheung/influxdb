@@ -896,7 +896,7 @@ func initVariableService(f platformtesting.VariableFields, t *testing.T) (platfo
 	ctx := context.Background()
 
 	for _, v := range f.Variables {
-		if err := svc.ReplaceVariable(ctx, v); err != nil {
+		if err := svc.ReplaceVariable(ctx, v.id, v); err != nil {
 			t.Fatalf("failed to replace variable: %v", err)
 		}
 	}

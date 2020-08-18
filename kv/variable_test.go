@@ -37,7 +37,7 @@ func initVariableService(s kv.SchemaStore, f influxdbtesting.VariableFields, t *
 	}
 
 	for _, variable := range f.Variables {
-		if err := svc.ReplaceVariable(ctx, variable); err != nil {
+		if err := svc.ReplaceVariable(ctx, variable.id, variable); err != nil {
 			t.Fatalf("failed to populate test variables: %v", err)
 		}
 	}

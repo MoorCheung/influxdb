@@ -65,15 +65,15 @@ func (s *VariableService) UpdateVariable(ctx context.Context, id influxdb.ID, up
 }
 
 // ReplaceVariable checks to see if the authorizer on context has write access to the variable provided.
-func (s *VariableService) ReplaceVariable(ctx context.Context, m *influxdb.Variable) error {
-	v, err := s.FindVariableByID(ctx, m.ID)
+func (s *VariableService) ReplaceVariable(ctx context.Context, id influxdb.ID, m *influxdb.Variable) error {
+	v, err := s.FindVariableByID(ctx, id)
 	if err != nil {
 		return err
 	}
 	if _, _, err := AuthorizeWrite(ctx, influxdb.VariablesResourceType, v.ID, v.OrganizationID); err != nil {
 		return err
 	}
-	return s.s.ReplaceVariable(ctx, m)
+	return s.s.ReplaceVariable(ctx, id, m)
 }
 
 // DeleteVariable checks to see if the authorizer on context has write access to the variable provided.

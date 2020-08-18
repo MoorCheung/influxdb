@@ -35,7 +35,7 @@ type VariableService interface {
 	UpdateVariable(ctx context.Context, id ID, update *VariableUpdate) (*Variable, error)
 
 	// ReplaceVariable replaces a single variable
-	ReplaceVariable(ctx context.Context, variable *Variable) error
+	ReplaceVariable(ctx context.Context, id ID, variable *Variable) error
 
 	// DeleteVariable removes a variable from the store
 	DeleteVariable(ctx context.Context, id ID) error

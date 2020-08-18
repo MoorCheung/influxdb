@@ -366,13 +366,13 @@ func (h *VariableHandler) handlePutVariable(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	err = h.VariableService.ReplaceVariable(ctx, req.variable)
+	err = h.VariableService.ReplaceVariable(ctx, req.id, req.variable)
 	if err != nil {
 		h.HandleHTTPError(ctx, err, w)
 		return
 	}
 
-	labels, err := h.LabelService.FindResourceLabels(ctx, influxdb.LabelMappingFilter{ResourceID: req.variable.ID, ResourceType: influxdb.VariablesResourceType})
+	labels, err := h.LabelService.FindResourceLabels(ctx, influxdb.LabelMappingFilter{ResourceID: req.id, ResourceType: influxdb.VariablesResourceType})
 	if err != nil {
 		h.HandleHTTPError(ctx, err, w)
 		return
@@ -386,6 +386,7 @@ func (h *VariableHandler) handlePutVariable(w http.ResponseWriter, r *http.Reque
 }
 
 type putVariableRequest struct {
+	id       influxdb.ID
 	variable *influxdb.Variable
 }
 
@@ -404,8 +405,14 @@ func decodePutVariableRequest(ctx context.Context, r *http.Request) (*putVariabl
 		}
 	}
 
+	id, err := requestVariableID(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	req := &putVariableRequest{
 		variable: m,
+		id:       id,
 	}
 
 	if err := req.Valid(); err != nil {
@@ -511,9 +518,9 @@ func (s *VariableService) UpdateVariable(ctx context.Context, id influxdb.ID, up
 }
 
 // ReplaceVariable replaces a single variable
-func (s *VariableService) ReplaceVariable(ctx context.Context, variable *influxdb.Variable) error {
+func (s *VariableService) ReplaceVariable(ctx context.Context, id influxdb.ID, variable *influxdb.Variable) error {
 	return s.Client.
-		PutJSON(variable, prefixVariables, variable.ID.String()).
+		PutJSON(variable, prefixVariables, id.String()).
 		DecodeJSON(variable).
 		Do(ctx)
 }

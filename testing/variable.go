@@ -1173,7 +1173,7 @@ func DeleteVariable(init func(VariableFields, *testing.T) (platform.VariableServ
 			defer done()
 			ctx := context.Background()
 
-			defer s.ReplaceVariable(ctx, &platform.Variable{
+			defer s.ReplaceVariable(ctx, tt.args.id, &platform.Variable{
 				ID:             tt.args.id,
 				OrganizationID: platform.ID(1),
 			})

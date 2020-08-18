@@ -460,7 +460,7 @@ func TestVariableService_ReplaceVariable(t *testing.T) {
 			ctx := context.Background()
 			ctx = influxdbcontext.SetAuthorizer(ctx, mock.NewMockAuthorizer(false, tt.args.permissions))
 
-			err := s.ReplaceVariable(ctx, &tt.args.variable)
+			err := s.ReplaceVariable(ctx, tt.args.variable.id, &tt.args.variable)
 			influxdbtesting.ErrorsEqual(t, err, tt.wants.err)
 		})
 	}
